@@ -179,3 +179,99 @@ node fetchWithRetry.js
 - **Third-Party Service Integration**: Managing rate limits, temporary outages, and service degradation in external APIs
 
 This implementation establishes a robust foundation for building resilient distributed systems capable of gracefully handling the inherent unpredictability of network-based communications and inter-service dependencies.
+
+
+## Task 3 - Rate Limiter
+
+### Overview
+A Python-based sliding window rate limiter that restricts API usage to a specified number of requests per time window per user. This implementation provides protection against API abuse and ensures fair resource distribution among users.
+
+### Features
+- **Sliding Window Algorithm**: Accurate time-based request tracking that automatically expires old requests
+- **Per-User Limits**: Separate rate limiting for each user ID
+- **Real-Time Enforcement**: Immediate request allowance/denial based on current window usage
+- **Auto-Reset Mechanism**: Automatic cleanup of expired requests without manual intervention
+- **In-Memory Storage**: Efficient deque-based storage suitable for single-process applications
+
+### Implementation Details
+
+**Key Components:**
+- `RateLimiter(limit, window_seconds)`: Main class implementing the rate limiting logic
+- `allow_request(user_id)`: Checks if a request should be allowed or denied
+- `get_request_count(user_id)`: Returns current request count within the window
+
+**Core Algorithm:**
+```python
+def allow_request(self, user_id):
+    now = time.time()
+    q = self.requests[user_id]
+    
+    # Remove timestamps older than window
+    cutoff = now - self.window
+    while q and q[0] < cutoff:
+        q.popleft()
+    
+    if len(q) >= self.limit:
+        return False  # Rate limited
+    q.append(now)     # Allow and record
+    return True
+```
+## Running the Code
+```python
+from rate_limiter import RateLimiter
+import time
+
+# Create rate limiter: 5 requests per 60 seconds
+limiter = RateLimiter(limit=5, window_seconds=60)
+
+# Simulate user requests
+user_id = "user_123"
+for i in range(10):
+    allowed = limiter.allow_request(user_id)
+    count = limiter.get_request_count(user_id)
+    print(f"Request {i+1}: Allowed={allowed}, Count={count}")
+
+# Demonstrate auto-reset after window
+time.sleep(61)
+print("After reset:", limiter.allow_request(user_id))
+```
+
+## Running the Code
+
+**Prerequisites:**
+- Python 3.6+
+- No external dependencies required
+
+**Command Line:**
+```bash
+cd task_3_rate_limiter
+python rate_limiter.py
+```
+
+## Design Decisions & Trade-offs
+
+- **Sliding Window vs Fixed Window**: Implemented sliding window algorithm for precise time-based limiting, providing more accurate request tracking compared to fixed window approaches that can allow bursts at window boundaries
+- **In-Memory Storage**: Utilized Python's defaultdict and deque for efficient memory management and O(1) operations, optimized for single-process applications while maintaining simplicity
+- **Automatic Cleanup**: Employed lazy cleanup strategy that removes expired timestamps only during request processing, balancing performance with accurate window maintenance
+- **Monotonic Time Consideration**: Used time.time() for development simplicity while acknowledging time.monotonic() would be preferable for production systems to handle clock adjustments
+
+## Edge Cases Handled
+
+- Rapid burst requests that immediately exceed the rate limit threshold
+- Requests occurring precisely at window boundary transitions
+- Multiple users with completely independent rate limit counters
+- New users with empty request history initialization
+- Automatic expiration of timestamps without manual intervention
+- Concurrent window transitions during high-frequency request patterns
+
+## Real-World Applications
+
+- **API Rate Limiting**: Protecting backend services and microservices from excessive request volumes and potential denial-of-service scenarios
+- **User Action Throttling**: Preventing spam and abuse in chat systems, comment sections, and form submission interfaces
+- **Payment Processing Security**: Limiting transaction attempts and card verification requests for fraud prevention
+- **File Upload Management**: Controlling resource consumption and bandwidth usage in file handling and media processing systems
+- **Third-Party Integration**: Managing API quotas and rate limits when integrating with external services and partner APIs
+
+## Scalability Considerations
+
+This implementation serves as a foundation for single-process environments. For distributed production systems, the same sliding window algorithm can be extended using Redis with sorted sets or other distributed data stores to maintain consistency across multiple application instances while preserving the accurate time-based limiting characteristics.
