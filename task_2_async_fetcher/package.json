@@ -1,0 +1,12 @@
+{
+    "name": "task_2_async_fetcher",
+    "version": "1.0.0",
+    "description": "Mock fetch with retry demo",
+    "main": "fetchWithRetry.js",
+    "scripts": {
+        "start": "node fetchWithRetry.js",
+        "test": "node fetchWithRetry.js"
+    },
+    "author": "",
+    "license": "MIT"
+}
