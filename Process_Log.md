@@ -1,7 +1,7 @@
 # Process Log — Eagle Point Technical Assessment  
 **Author:** Ermias Tadesse  
 **Tasks Completed:** Task 1, Task 2, Task 3  
-**Date:** 2024  
+**Date:** 29-11-2025
 
 ---
 
